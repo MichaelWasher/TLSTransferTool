@@ -1,0 +1,31 @@
+version: "3"
+services:
+  "tftp-client.example.com":
+    image: tftp
+    hostname: tftp-client
+    domainname: tftp-client.example.com
+    command: ["client", "tftp-server.example.com", "33333", "-o output_file.md", "README.md"]
+    depends_on:
+      - tftp-server.example.com
+    environment:
+      CLIENT_DEBUG: ${CLIENT_DEBUG}
+      CLIENT_HOST: ${SERVER_HOST}
+      CLIENT_PORT: ${SERVER_PORT}
+    volumes:
+    - ./certificates/tftp-server.example.com:/tmp/src/certificates
+    - ./target:/tmp/src/target
+  "tftp-server.example.com":
+    image: tftp
+    command: ["server", "--key-store=/tmp/src/certificates/KeyStore.jks", "--key-store-password=tester1234", "33333", "/tmp/src"]
+    hostname: tftp-server
+    domainname: tftp-server.example.com
+    environment:
+      SERVER_DEBUG: ${SERVER_DEBUG}
+      KEYSTORE: ${KEYSTORE}
+      KEYSTORE_PASS: ${KEYSTORE_PASS}
+      SERVER_PORT: ${SERVER_PORT}
+    ports:
+      - "44444"
+    volumes:
+      - ./certificates/tftp-server.example.com:/tmp/src/certificates
+      - ./target:/tmp/src/target 
