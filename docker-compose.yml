@@ -8,6 +8,7 @@ services:
     depends_on:
       - tftp-server.example.com
     environment:
+      JAVA_OPTS: -Djavax.net.debug=all -Djavax.net.ssl.trustStore=/tmp/src/certificates/KeyStore.jks -Djavax.net.ssl.trustStorePassword=tester1234
       CLIENT_DEBUG: ${CLIENT_DEBUG}
       CLIENT_HOST: ${SERVER_HOST}
       CLIENT_PORT: ${SERVER_PORT}
@@ -20,6 +21,7 @@ services:
     hostname: tftp-server
     domainname: tftp-server.example.com
     environment:
+      JAVA_OPTS: -Djavax.net.debug=all -Djavax.net.ssl.trustStore=/tmp/src/certificates/KeyStore.jks -Djavax.net.ssl.trustStorePassword=tester1234
       SERVER_DEBUG: ${SERVER_DEBUG}
       KEYSTORE: ${KEYSTORE}
       KEYSTORE_PASS: ${KEYSTORE_PASS}
