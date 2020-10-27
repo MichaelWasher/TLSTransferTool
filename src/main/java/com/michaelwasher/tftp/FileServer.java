@@ -110,7 +110,7 @@ public class FileServer {
     }
     public void start(){
         LOGGER.setLevel(Level.FINEST);
-        System.out.println("Started");
+        LOGGER.info("Started");
     }
 
     private void sendFile(String requestedFilename, BufferedOutputStream clientConnectionOutput) {
@@ -202,7 +202,4 @@ public class FileServer {
         return true;
     }
 
-    public static void displayUsage() {
-        System.out.println("Usage: MyTLSFileServer <portNum>");
-    }
 }

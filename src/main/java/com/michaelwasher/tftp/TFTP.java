@@ -25,7 +25,6 @@ public class TFTP implements Runnable {
         @Option(names = { "-o", "--output-file" }, paramLabel = "<output-file>",
                 description = "The output file name.") String outputFilename
     ) {
-        System.out.println("TFPTClient");
         if(outputFilename == null){
             outputFilename = "_" + requestedFilename;
         }

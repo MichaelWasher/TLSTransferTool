@@ -10,6 +10,7 @@ package com.michaelwasher.tftp;// -------- Basic com.michaelwasher.tftp.TFTP Fil
 
 import java.lang.*;
 import java.io.*;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class FileHandler
@@ -43,17 +44,12 @@ public class FileHandler
 			int c;
 			byte[] fixedByteArray = new byte[1024];
 			while ((c = in.read(fixedByteArray)) != -1) {
-//				System.out.println(c); //Testing and debugging
+				LOGGER.fine(String.format("Copied %d bytes.", c));
 				out.write(fixedByteArray);
 				out.flush();
-				Thread.sleep(1000);
 			}
 		} catch (IOException e){
-			System.err.println("File copy failed: " + e );
-		} catch(Exception e)
-		{
-			//Debugging
-			e.printStackTrace();
+			LOGGER.log(Level.SEVERE, "File copy failed: " + e.getMessage(), e );
 		}
 	} //copyFile()
 

@@ -87,7 +87,7 @@ public class FileClient {
 			//Send create new file of _FileName
 			File newFile = new File(this.outputFilename);
 
-			System.out.println(String.format("Created a new file: %s", this.outputFilename));
+			LOGGER.info(String.format("Created a new file: %s", this.outputFilename));
 
 			// Get In / Out Streams
 			FileOutputStream fos = new FileOutputStream(newFile);
@@ -101,8 +101,7 @@ public class FileClient {
 		}catch(Exception e)
 		{
 			//TODO split this function into sparate functions and have better error handling
-			System.out.println("Opps. Something went wrong.");
-			e.printStackTrace();
+			LOGGER.log(Level.SEVERE, e.getMessage(), e);
 		}
 	}
 	public static boolean acceptedArgs()
