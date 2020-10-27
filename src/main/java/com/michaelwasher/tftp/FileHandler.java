@@ -38,6 +38,7 @@ public class FileHandler
 
 	//Takes all bytes from the InStream and sends them through the BufferedOutStream using a byte array.
 	//Sleep timer has been added for makeshift slow connection.
+	// TODO BUd with input / output copy file
 	public static void copyFile(InputStream in, OutputStream out){//inspect for errors
 		LOGGER.fine("Sending files.");
 		try {
@@ -45,7 +46,7 @@ public class FileHandler
 			byte[] fixedByteArray = new byte[1024];
 			while ((c = in.read(fixedByteArray)) != -1) {
 				LOGGER.fine(String.format("Copied %d bytes.", c));
-				out.write(fixedByteArray);
+				out.write(fixedByteArray,0, c);
 				out.flush();
 			}
 		} catch (IOException e){

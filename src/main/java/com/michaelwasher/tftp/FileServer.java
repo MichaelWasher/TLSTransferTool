@@ -23,6 +23,7 @@ public class FileServer {
 
     private String keystorePassword;
     private String keystorePath;
+    private String hostedFolder;
 
     // Argument Limits
     private static int PORT_MAX = 55555;
@@ -39,18 +40,17 @@ public class FileServer {
     private final String DENIED_RESPONSE = "DENIED";
     private String[] validResponseList = {SUCCESS_RESPONSE, FAILED_RESPONSE, DENIED_RESPONSE};
 
-
-
     public FileServer(int port, String hostedFolder, String keystorePath, String keystorePassword) {
         // Set logger configuration
         LOGGER = Logger.getLogger(FileClient.class.getName());
-        LOGGER.setLevel(Level.FINER);
+        LOGGER.setLevel(Level.FINEST);
 
         // TODO allow folder to be shared
         // TODO allow folder to be listed
         //
         this.keystorePassword = keystorePassword;
         this.keystorePath = keystorePath;
+        this.hostedFolder = hostedFolder;
 
         // Check arguments
         if (!acceptedArgs(port, hostedFolder, keystorePath, keystorePassword))
@@ -90,29 +90,32 @@ public class FileServer {
             while(connectionActive) {
 
                 // Get command request from client
-                String[] requestLine = clientConnectionInput.readLine().split(" ");
+                String requestLine = clientConnectionInput.readLine();
+                List<String> requestLineList = Arrays.asList(requestLine.split(" "));
+                LOGGER.info("Request received from Client: " + requestLine);
+
                 if (!checkRequestLineIsValid()) {
-                    if (requestLine.length != 2) {
+                    if (requestLineList.size() != 2) {
                         // TODO ERROR malformed command
                     }
                 }
 
                 // Command Switch
-                String command = requestLine[0];
+                String command = requestLineList.get(0);
                 switch(command.toUpperCase()){
                     case GET_COMMAND:
-                        processGetRequest(requestLine, fileList, clientConnectionOutput);
+                        processGetRequest(requestLineList, fileList, clientConnectionOutput);
                         break;
                     case LIST_COMMAND:
-                        processListRequest(requestLine, fileList, clientConnectionOutput);
+                        processListRequest(requestLineList, fileList, clientConnectionOutput);
                         break;
                     default:
-                        processInvalidRequest(requestLine, fileList, clientConnectionOutput);
+                        processInvalidRequest(requestLineList, fileList, clientConnectionOutput);
                 }
             }
             LOGGER.fine("Closing socket connections.");
-            clientConnectionInput.close();
-            socket.close();
+//            clientConnectionInput.close();
+//            socket.close();
 
         } catch (Exception e) {
             LOGGER.info("Opps. Something went wrong.");
@@ -136,8 +139,8 @@ public class FileServer {
             FileHandler.copyFile(fis, bos);
             LOGGER.fine("Closing socket connections.");
             // Close connections
-            fis.close();
-            bos.close();
+//            fis.close();
+//            bos.close();
         }catch (FileNotFoundException nfe){
             nfe.printStackTrace();
             // TODO Dump exception
@@ -146,29 +149,37 @@ public class FileServer {
             ioe.printStackTrace();
         }
     }
-    private void processGetRequest(String[] requestLine, List<String> fileList, BufferedOutputStream clientConnectionOutput){
+    private void processGetRequest(List<String> requestLine, List<String> fileList, BufferedOutputStream clientConnectionOutput){
         // TODO IF file is present then pass to Client
         // IF not present then throw message to client
 
         // Get File Name
-        String requestedFilename = requestLine[1];
+        String requestedFilename = requestLine.get(1);
 
         // Check request from Socket against the list of files
+        PrintWriter clientConnectionTextOutput = new PrintWriter(clientConnectionOutput);
         if (!fileList.contains(requestedFilename)) {
-            PrintWriter clientConnectionTextOutput = new PrintWriter(clientConnectionOutput);
             clientConnectionTextOutput.print(FAILED_RESPONSE + ": File Not Found");
-            clientConnectionTextOutput.close();
         } else{
             // Send file
-            sendFile(requestedFilename, clientConnectionOutput);
+            // TODO perform OS filename join correctly
+            clientConnectionTextOutput.println(SUCCESS_RESPONSE + " " + requestedFilename);
+            clientConnectionTextOutput.flush();
+            sendFile( hostedFolder + "/" + requestedFilename, clientConnectionOutput);
         }
+//        clientConnectionTextOutput.close();
     }
-    private void processListRequest(String[] requestLine, List<String> fileList, BufferedOutputStream clientConnectionOutput){
+    private void processListRequest(List<String> requestLine, List<String> fileList, BufferedOutputStream clientConnectionOutput){
         PrintWriter clientConnectionTextOutput = new PrintWriter(clientConnectionOutput);
-        clientConnectionTextOutput.print(String.join(" ", fileList));
-        clientConnectionTextOutput.close();
+        clientConnectionTextOutput.println("SUCCESS LIST");
+        LOGGER.info("Response: SUCCESS LIST");
+        LOGGER.fine(String.join(" ", fileList));
+        clientConnectionTextOutput.println(String.join(" ", fileList));
+        clientConnectionTextOutput.println(String.join(" ", fileList));
+        clientConnectionTextOutput.flush();
+//        clientConnectionTextOutput.close();
     }
-    private void processInvalidRequest(String[] requestLine, List<String> fileList, BufferedOutputStream clientConnectionOutput){
+    private void processInvalidRequest(List<String> requestLine, List<String> fileList, BufferedOutputStream clientConnectionOutput){
     }
 
     //Test input is as expected

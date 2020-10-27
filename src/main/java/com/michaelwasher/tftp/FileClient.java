@@ -17,14 +17,18 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import java.io.*;
+import java.net.Socket;
 import java.security.cert.X509Certificate;
-import java.util.logging.ConsoleHandler;
+import java.util.Arrays;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static java.lang.Thread.sleep;
+
 public class FileClient {
 
-	private Logger LOGGER;
+	private final Logger LOGGER;
 
 	// Program Arguments
 	protected String hostname;
@@ -35,13 +39,16 @@ public class FileClient {
 	// Request Commands
 	private final String GET_COMMAND = "GET";
 	private final String LIST_COMMAND = "LIST";
-	private String[] validCommandList = {GET_COMMAND, LIST_COMMAND};
+	private final String[] validCommandList = {GET_COMMAND, LIST_COMMAND};
 
 	// Response Values
 	private final String SUCCESS_RESPONSE = "SUCCESS";
 	private final String FAILED_RESPONSE = "FAILED";
 	private final String DENIED_RESPONSE = "DENIED";
-	private String[] validResponseList = {SUCCESS_RESPONSE, FAILED_RESPONSE, DENIED_RESPONSE};
+	private final String[] validResponseList = {SUCCESS_RESPONSE, FAILED_RESPONSE, DENIED_RESPONSE};
+
+	// TODO Temporary
+	protected boolean getRequest = false;
 
 	//Main Method
 	public FileClient(int port, String hostname, String requestedFilename, String outputFilename) {
@@ -51,11 +58,7 @@ public class FileClient {
 		this.portNum = port;
 		// Configure logger
 		LOGGER = Logger.getLogger(FileClient.class.getName());
-		LOGGER.setLevel(Level.FINER);
-		ConsoleHandler handler = new ConsoleHandler();
-		handler.setLevel(Level.FINER);
-		LOGGER.addHandler(handler);
-
+		LOGGER.setLevel(Level.FINEST);
 	}
 
 	public void start(){
@@ -65,14 +68,22 @@ public class FileClient {
 			// TODO Fail
 		}
 
-		try
-		{
+		try {
 			// Start SSL Connection
 			SSLSocket socket = this.getSSLSocket();
-			try{
+			BufferedReader serverConnectionInput;
+			OutputStream connectionOutputStream;
+			PrintWriter printWriter;
+
+			try {
 				socket.startHandshake();
-			}catch(IOException ioe){
-				LOGGER.info("Socket handshake failed.");
+				serverConnectionInput = new BufferedReader(
+						new InputStreamReader(
+								socket.getInputStream()));
+				connectionOutputStream = socket.getOutputStream();
+				printWriter = new PrintWriter(connectionOutputStream);
+			} catch (IOException ioe) {
+				LOGGER.info("Unable to establish connection.");
 				LOGGER.info(ioe.getMessage());
 				ioe.printStackTrace();
 				throw ioe;
@@ -81,36 +92,30 @@ public class FileClient {
 			//Get Certificate for the session
 			LOGGER.fine("Confirming peer certificates.");
 			SSLSession session = socket.getSession();
-			X509Certificate sessionCertificate = (X509Certificate)session.getPeerCertificates()[0];
+			X509Certificate sessionCertificate = (X509Certificate) session.getPeerCertificates()[0];
 
 			//Get the CommonName and compare
-			if(getCommonName(sessionCertificate).equalsIgnoreCase(this.hostname))
+			if (getCommonName(sessionCertificate).equalsIgnoreCase(this.hostname))
 				LOGGER.info("Verified Host to be:" + this.hostname);
 			else
 				LOGGER.info(String.format("Unable to Verify Host %s Status.", this.hostname));
 
-			// TODO Send a request for the filename
-			OutputStream os = socket.getOutputStream();
-			PrintWriter printWriter = new PrintWriter(os);
-			printWriter.println(this.requestedFilename);
-			printWriter.flush();
+			//TODO Add List request command
+			if (getRequest) {
+				processGetRequest(printWriter);
+				List<String> responseLineList = collectResponse(serverConnectionInput);
+				processGetResponse(responseLineList, socket);
+			} else {
+				processListRequest(printWriter);
+				List<String> responseLineList = collectResponse(serverConnectionInput);
+				processListResponse(responseLineList, serverConnectionInput);
 
-			//Send create new file of _FileName
-			File newFile = new File(this.outputFilename);
+			}
 
-			LOGGER.info(String.format("Created a new file: %s", this.outputFilename));
-
-			// Get In / Out Streams
-			FileOutputStream fos = new FileOutputStream(newFile);
-			FileHandler.copyFile(socket.getInputStream(),fos);
-
-			//Close all sockets and things at the end.
-
-			fos.close();
+			//Close socket
 			socket.close();
 
-		}catch(Exception e)
-		{
+		} catch(Exception e) {
 			//TODO split this function into sparate functions and have better error handling
 			LOGGER.log(Level.SEVERE, e.getMessage(), e);
 		}
@@ -119,6 +124,92 @@ public class FileClient {
 	{
 		//TODO Check the args input
 		return true;
+	}
+	protected boolean checkResponseLineIsValid(List<String> responseLine)
+	{
+		return true;
+	}
+	public List<String> collectResponse(BufferedReader serverConnectionInput){
+		List<String> responseLineList = null;
+		try {
+			String responseLine = serverConnectionInput.readLine();
+			responseLineList = Arrays.asList(responseLine.split(" "));
+			LOGGER.info("Response received from Server: " + String.join(" ", responseLineList));
+		} catch (IOException ioException){
+			LOGGER.log(Level.SEVERE, ioException.getMessage(), ioException);
+			// TODO Might re-raise
+		}
+		if (!checkResponseLineIsValid(responseLineList)) {
+			LOGGER.log(Level.SEVERE, responseLineList.toString());
+			return null;
+		}
+		return responseLineList;
+	}
+	protected void processGetRequest(PrintWriter printWriter){
+		printWriter.println(GET_COMMAND + " " + this.requestedFilename);
+		printWriter.flush();
+	}
+	public void processGetResponse(List<String> responseLineList, Socket clientSocket){
+		String command = responseLineList.get(0);
+		switch (command.toUpperCase()) {
+			case "SUCCESS":
+				processSuccessGetResponse(clientSocket);
+				break;
+//			case "FAILED":
+//				processFailedResponse();
+//				break;
+//			default:
+//				processInvalidRequest(requestLine, fileList, clientConnectionOutput);
+		}
+	}
+	public void processListRequest(PrintWriter printWriter){
+			printWriter.println(LIST_COMMAND);
+			printWriter.flush();
+	}
+
+
+	public void processListResponse(List<String> responseLineList, BufferedReader serverConnectionInput){
+		String command = responseLineList.get(0);
+		switch (command.toUpperCase()) {
+			case SUCCESS_RESPONSE:
+				processSuccessListResponse(serverConnectionInput);
+				break;
+//			case FAILED_RESPONSE:
+//				processFailedResponse();
+//				break;
+//			default:
+//				processInvalidRequest(requestLine, fileList, clientConnectionOutput);
+		}
+	}
+
+	public void processSuccessGetResponse(Socket socket){
+		try {
+			LOGGER.info(String.format("Created a new file: %s", this.outputFilename));
+			// Create new file
+			File newFile = new File(this.outputFilename);
+			FileOutputStream fos = new FileOutputStream(newFile);
+
+			// Write to file
+			FileHandler.copyFile(socket.getInputStream(), fos);
+//			fos.close();
+
+
+		}catch(FileNotFoundException notFoundException){
+			LOGGER.log(Level.SEVERE, notFoundException.getMessage(), notFoundException);
+		}catch(IOException ioException){
+			LOGGER.log(Level.SEVERE, ioException.getMessage(), ioException);
+		}
+	}
+	public void processSuccessListResponse(BufferedReader serverConnectionInput){
+		try {
+			String readList;
+			while(null != (readList = serverConnectionInput.readLine())){
+				System.out.println(readList);
+				LOGGER.fine(readList);
+			}
+		}catch(IOException ioException){
+			LOGGER.log(Level.SEVERE, ioException.getMessage(), ioException);
+		}
 	}
 
 
