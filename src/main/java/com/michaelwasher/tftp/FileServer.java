@@ -13,25 +13,37 @@ import java.io.*;
 import java.security.KeyStore;
 import java.util.Arrays;
 import java.util.List;
-import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 
 public class FileServer {
-    private static int maxNum = 55555;
-    private static int minNum = 33333;
+
     private static Logger LOGGER;
 
     private String keystorePassword;
     private String keystorePath;
 
-    private String[] ValidCommandList = {"GET", "LIST", "FAILED"};
+    // Argument Limits
+    private static int PORT_MAX = 55555;
+    private static int PORT_MIN = 33333;
+
+    // Request Commands
+    private final String GET_COMMAND = "GET";
+    private final String LIST_COMMAND = "LIST";
+    private String[] validCommandList = {GET_COMMAND, LIST_COMMAND};
+
+    // Response Values
+    private final String SUCCESS_RESPONSE = "SUCCESS";
+    private final String FAILED_RESPONSE = "FAILED";
+    private final String DENIED_RESPONSE = "DENIED";
+    private String[] validResponseList = {SUCCESS_RESPONSE, FAILED_RESPONSE, DENIED_RESPONSE};
+
+
 
     public FileServer(int port, String hostedFolder, String keystorePath, String keystorePassword) {
         // Set logger configuration
         LOGGER = Logger.getLogger(FileClient.class.getName());
-        // LOG this level to the log
         LOGGER.setLevel(Level.FINER);
 
         // TODO allow folder to be shared
@@ -53,7 +65,7 @@ public class FileServer {
 
         try {
             LOGGER.fine("Waiting on Clients");
-            // TODO Set normal mode without SSL available
+            // TODO Add Set normal mode without SSL available
             // TODO
             // Get ServerSocket
             SSLServerSocket serverSocket = getServerSocket(port, keystorePath, keystorePassword);
@@ -88,10 +100,10 @@ public class FileServer {
                 // Command Switch
                 String command = requestLine[0];
                 switch(command.toUpperCase()){
-                    case "GET":
+                    case GET_COMMAND:
                         processGetRequest(requestLine, fileList, clientConnectionOutput);
                         break;
-                    case "LIST":
+                    case LIST_COMMAND:
                         processListRequest(requestLine, fileList, clientConnectionOutput);
                         break;
                     default:
@@ -144,7 +156,7 @@ public class FileServer {
         // Check request from Socket against the list of files
         if (!fileList.contains(requestedFilename)) {
             PrintWriter clientConnectionTextOutput = new PrintWriter(clientConnectionOutput);
-            clientConnectionTextOutput.print("FAILED: File Not Found");
+            clientConnectionTextOutput.print(FAILED_RESPONSE + ": File Not Found");
             clientConnectionTextOutput.close();
         } else{
             // Send file
@@ -162,8 +174,8 @@ public class FileServer {
     //Test input is as expected
     public static boolean acceptedArgs(int port, String hostedFolder, String keystorePath, String keystorePassword) {
         //TODO perform actual logging checks
-        if (port > maxNum || port < minNum) {
-            LOGGER.info(String.format("Please input a port number between %d and %d", minNum, maxNum));
+        if (port > PORT_MAX || port < PORT_MIN) {
+            LOGGER.info(String.format("Please input a port number between %d and %d", PORT_MIN, PORT_MAX));
             return false;
         }
         return true;

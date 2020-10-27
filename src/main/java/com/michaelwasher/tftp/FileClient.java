@@ -32,6 +32,17 @@ public class FileClient {
 	protected String requestedFilename;
 	protected String outputFilename;
 
+	// Request Commands
+	private final String GET_COMMAND = "GET";
+	private final String LIST_COMMAND = "LIST";
+	private String[] validCommandList = {GET_COMMAND, LIST_COMMAND};
+
+	// Response Values
+	private final String SUCCESS_RESPONSE = "SUCCESS";
+	private final String FAILED_RESPONSE = "FAILED";
+	private final String DENIED_RESPONSE = "DENIED";
+	private String[] validResponseList = {SUCCESS_RESPONSE, FAILED_RESPONSE, DENIED_RESPONSE};
+
 	//Main Method
 	public FileClient(int port, String hostname, String requestedFilename, String outputFilename) {
 		this.hostname = hostname;
