@@ -50,18 +50,22 @@ public class FileClient {
 	// TODO Temporary
 	protected boolean getRequest = false;
 
+
+	private SSLSocket clientSocket;
+	private BufferedReader serverConnectionInput;
+	private OutputStream connectionOutputStream;
+	private PrintWriter printWriter;
+
 	//Main Method
-	public FileClient(int port, String hostname, String requestedFilename, String outputFilename) {
+	public FileClient(int port, String hostname) {
 		this.hostname = hostname;
-		this.requestedFilename = requestedFilename;
-		this.outputFilename = outputFilename;
 		this.portNum = port;
 		// Configure logger
 		LOGGER = Logger.getLogger(FileClient.class.getName());
 		LOGGER.setLevel(Level.FINEST);
 	}
 
-	public void start(){
+	protected void configureClient(){
 		// Check Args
 		if(! acceptedArgs())
 		{
@@ -70,17 +74,14 @@ public class FileClient {
 
 		try {
 			// Start SSL Connection
-			SSLSocket socket = this.getSSLSocket();
-			BufferedReader serverConnectionInput;
-			OutputStream connectionOutputStream;
-			PrintWriter printWriter;
+			clientSocket = this.getSSLSocket();
 
 			try {
-				socket.startHandshake();
+				clientSocket.startHandshake();
 				serverConnectionInput = new BufferedReader(
 						new InputStreamReader(
-								socket.getInputStream()));
-				connectionOutputStream = socket.getOutputStream();
+								clientSocket.getInputStream()));
+				connectionOutputStream = clientSocket.getOutputStream();
 				printWriter = new PrintWriter(connectionOutputStream);
 			} catch (IOException ioe) {
 				LOGGER.info("Unable to establish connection.");
@@ -91,7 +92,7 @@ public class FileClient {
 
 			//Get Certificate for the session
 			LOGGER.fine("Confirming peer certificates.");
-			SSLSession session = socket.getSession();
+			SSLSession session = clientSocket.getSession();
 			X509Certificate sessionCertificate = (X509Certificate) session.getPeerCertificates()[0];
 
 			//Get the CommonName and compare
@@ -100,25 +101,38 @@ public class FileClient {
 			else
 				LOGGER.info(String.format("Unable to Verify Host %s Status.", this.hostname));
 
-			//TODO Add List request command
-			if (getRequest) {
-				processGetRequest(printWriter);
-				List<String> responseLineList = collectResponse(serverConnectionInput);
-				processGetResponse(responseLineList, socket);
-			} else {
-				processListRequest(printWriter);
-				List<String> responseLineList = collectResponse(serverConnectionInput);
-				processListResponse(responseLineList, serverConnectionInput);
 
-			}
 
 			//Close socket
-			socket.close();
+//			clientSocket.close();
 
 		} catch(Exception e) {
 			//TODO split this function into sparate functions and have better error handling
 			LOGGER.log(Level.SEVERE, e.getMessage(), e);
 		}
+	}
+
+	public boolean getFile(String requestedFilename, String outputFilename){
+		// Setup Client
+		this.requestedFilename = requestedFilename;
+		this.outputFilename = outputFilename;
+		configureClient();
+
+		// Process a Copy / Get file Request
+		processGetRequest(printWriter);
+		List<String> responseLineList = collectResponse(serverConnectionInput);
+		processGetResponse(responseLineList, clientSocket);
+		return true;
+	}
+	public boolean listFiles(){
+		// Setup Client
+		configureClient();
+
+		// Process a List folder Request
+		processListRequest(printWriter);
+		List<String> responseLineList = collectResponse(serverConnectionInput);
+		processListResponse(responseLineList, serverConnectionInput);
+		return true;
 	}
 	public static boolean acceptedArgs()
 	{
