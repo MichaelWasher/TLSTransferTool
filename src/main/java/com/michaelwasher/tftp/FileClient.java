@@ -219,7 +219,7 @@ public class FileClient {
 			String readList;
 			while(null != (readList = serverConnectionInput.readLine())){
 				System.out.println(readList);
-				LOGGER.fine(readList);
+//				LOGGER.fine(readList);
 			}
 		}catch(IOException ioException){
 			LOGGER.log(Level.SEVERE, ioException.getMessage(), ioException);
