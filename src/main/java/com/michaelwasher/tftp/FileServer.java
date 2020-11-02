@@ -112,10 +112,11 @@ public class FileServer {
                     default:
                         processInvalidRequest(requestLineList, fileList, clientConnectionOutput);
                 }
+                connectionActive = false;
             }
             LOGGER.fine("Closing socket connections.");
-//            clientConnectionInput.close();
-//            socket.close();
+            clientConnectionInput.close();
+            socket.close();
 
         } catch (Exception e) {
             LOGGER.info("Opps. Something went wrong.");
@@ -173,8 +174,7 @@ public class FileServer {
         PrintWriter clientConnectionTextOutput = new PrintWriter(clientConnectionOutput);
         clientConnectionTextOutput.println("SUCCESS LIST");
         LOGGER.info("Response: SUCCESS LIST");
-        LOGGER.fine(String.join(" ", fileList));
-        clientConnectionTextOutput.println(String.join(" ", fileList));
+        LOGGER.info(String.join(" ", fileList));
         clientConnectionTextOutput.println(String.join(" ", fileList));
         clientConnectionTextOutput.flush();
 //        clientConnectionTextOutput.close();

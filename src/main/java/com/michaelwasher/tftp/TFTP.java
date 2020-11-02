@@ -8,29 +8,14 @@ import picocli.CommandLine.Spec;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.ParameterException;
 
+import java.util.concurrent.Callable;
+
 @Command(name = "TFTP", version = "TFTP-v0.1",
-        subcommands = { CommandLine.HelpCommand.class },
+        subcommands = { CommandLine.HelpCommand.class, CommandlineClient.class },
         mixinStandardHelpOptions = true)
 public class TFTP implements Runnable {
 
     @Spec CommandSpec spec;
-    @Command(name = "client", description = "Use the TFTP Client to connect to a TFTP Server.")
-    void TFPTClient(
-        @Parameters(arity = "1", paramLabel = "<hostname>",
-                description = "") String hostname,
-        @Parameters(arity = "1", paramLabel = "<port>",
-                description = "TCP port number to connect to") int port,
-        @Parameters(arity = "1", paramLabel = "<filename>",
-                description = "") String requestedFilename,
-        @Option(names = { "-o", "--output-file" }, paramLabel = "<output-file>",
-                description = "The output file name.") String outputFilename
-    ) {
-        if(outputFilename == null){
-            outputFilename = "_" + requestedFilename;
-        }
-        FileClient fileClient = new FileClient(port, hostname, requestedFilename.trim(), outputFilename.trim());
-        fileClient.start();
-    }
     @Command(name = "server", description = "Use the TFTP Server to host files.")
     void TFTPServer(
             @Parameters(arity = "1", paramLabel = "<port>",
@@ -53,5 +38,44 @@ public class TFTP implements Runnable {
     public static void main(String[] args) {
         int exitCode = new CommandLine(new TFTP()).execute(args);
         System.exit(exitCode);
+    }
+}
+
+@Command(name = "client", description = "Use the TFTP Client to connect to a TFTP Server.")
+class CommandlineClient implements Callable<Integer> {
+    @Spec CommandSpec spec;
+
+    // Setting Parameters
+    @Command(name = "list", description = "Use to list all files accessible from the connected server.")
+    void listCommand(
+        @Parameters(arity = "1", paramLabel = "<hostname>",
+                description = "") String hostname,
+                @Parameters(arity = "1", paramLabel = "<port>",
+        description = "TCP port number to connect to") int port){
+        FileClient fileClient = new FileClient(port, hostname);
+        fileClient.listFiles();
+        return;
+    }
+
+    @Command(name = "copy", description = "Copy file(s) from the connected server.")
+    void copy(
+            @Parameters(arity = "1", paramLabel = "<hostname>",
+            description = "") String hostname,
+            @Parameters(arity = "1", paramLabel = "<port>",
+                  description = "TCP port number to connect to") int port,
+            @Parameters(arity = "1", paramLabel = "<filename>",
+                description = "") String requestedFilename,
+            @Option(names = { "-o", "--output-file" }, paramLabel = "<output-file>",
+                description = "The output file name.") String outputFilename){
+        if(outputFilename == null){
+            outputFilename = "_" + requestedFilename;
+        }
+        FileClient fileClient = new FileClient(port, hostname);
+        fileClient.getFile(requestedFilename.trim(), outputFilename.trim());
+    }
+
+
+    @Override public Integer call() {
+        throw new ParameterException(spec.commandLine(), "Specify a subcommand");
     }
 }
