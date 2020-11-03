@@ -1,21 +1,21 @@
 version: "3"
 services:
-  "tftp-client.example.com":
-    image: tftp
-    hostname: tftp-client
-    domainname: tftp-client.example.com
-    command: ["client", "copy", "tftp-server.example.com", "33333", "-o output_file.md", "README.md"]
+  "tlstransfer-client.example.com":
+    image: tlstransfer
+    hostname: tlstransfer-client
+    domainname: tlstransfer-client.example.com
+    command: ["client", "copy", "tlstransfer-server.example.com", "33333", "-o output_file.md", "README.md"]
     depends_on:
-      - tftp-server.example.com
+      - tlstransfer-server.example.com
     environment:
-      JAVA_OPTS: -Djava.util.logging.level=FINEST  -Djavax.net.ssl.trustStore=certificates/tftp-server.example.com/KeyStore.jks -Djavax.net.ssl.trustStorePassword=tester1234
-  "tftp-server.example.com":
-    image: tftp
-    command: ["server", "--key-store=certificates/tftp-server.example.com/KeyStore.jks", "--key-store-password=tester1234", "33333", "/tmp/src"]
-    hostname: tftp-server
-    domainname: tftp-server.example.com
+      JAVA_OPTS: -Djava.util.logging.level=FINEST  -Djavax.net.ssl.trustStore=certificates/tlstransfer-server.example.com/KeyStore.jks -Djavax.net.ssl.trustStorePassword=tester1234
+  "tlstransfer-server.example.com":
+    image: tlstransfer
+    command: ["server", "--key-store=certificates/tlstransfer-server.example.com/KeyStore.jks", "--key-store-password=tester1234", "33333", "/tmp/src"]
+    hostname: tlstransfer-server
+    domainname: tlstransfer-server.example.com
     environment:
-      JAVA_OPTS: -Djava.util.logging.ConsoleHandler.level=FINEST  -Djavax.net.ssl.trustStore=certificates/tftp-server.example.com/KeyStore.jks -Djavax.net.ssl.trustStorePassword=tester1234
+      JAVA_OPTS: -Djava.util.logging.ConsoleHandler.level=FINEST  -Djavax.net.ssl.trustStore=certificates/tlstransfer-server.example.com/KeyStore.jks -Djavax.net.ssl.trustStorePassword=tester1234
 #      JAVA_OPTS: -Djavax.net.debug=all
     ports:
       - "33333"

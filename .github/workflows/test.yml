@@ -1,4 +1,4 @@
-# Build and Tes the TFTP Server
+# Build and Test the TLSTransfer Server
 name: CI
 
 on:
@@ -29,7 +29,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: target
-          path: target/tftp.jar
+          path: target/tlstransfer.jar
 
   test:
     name: Run Tests on Build Artifacts
