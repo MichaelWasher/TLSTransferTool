@@ -3,8 +3,8 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>tftpProject</groupId>
-    <artifactId>Trivial_Encrypted_FTP_Server</artifactId>
+    <groupId>tlstransferProject</groupId>
+    <artifactId>TLSTransfer</artifactId>
     <version>0.1</version>
     <packaging>jar</packaging>
     <properties>
@@ -74,10 +74,10 @@
                             <shadedArtifactAttached>true</shadedArtifactAttached>
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>com.michaelwasher.tftp.TFTP</mainClass>
+                                    <mainClass>com.michaelwasher.tlstransfer.TLSTransfer</mainClass>
                                 </transformer>
                             </transformers>
-                            <finalName>tftp</finalName>
+                            <finalName>tlstransfer</finalName>
                         </configuration>
                     </execution>
                 </executions>

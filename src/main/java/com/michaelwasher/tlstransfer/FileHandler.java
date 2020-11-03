@@ -1,4 +1,5 @@
-package com.michaelwasher.tftp;// -------- Basic com.michaelwasher.tftp.TFTP File Server ----------
+package com.michaelwasher.tlstransfer;
+// -------- Basic TLSTransfer File Server ----------
 //Name: Michael Washer
 //
 // ------------------------------------------

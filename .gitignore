@@ -1,6 +1,6 @@
 .idea
 .gradle
-
+__pycache__
 build
 target
 *.DS_STORE

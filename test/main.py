@@ -1,4 +1,4 @@
-""" This Module is used to run basic Black Box Testing for the TFTP Project """
+""" This Module is used to run basic Black Box Testing for the TLSTransfer Project """
 
 import subprocess
 import time
@@ -14,7 +14,7 @@ import unittest
 
 # Setting filepaths
 source_dir_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..")
-app_location = os.path.join(source_dir_path, "target/tftp.jar")
+app_location = os.path.join(source_dir_path, "target/tlstransfer.jar")
 certificates_folder = os.path.join(source_dir_path, "certificates/localhost")
 
 # Configure Keystore
