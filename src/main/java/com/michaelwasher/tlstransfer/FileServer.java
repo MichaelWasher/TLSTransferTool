@@ -42,6 +42,8 @@ public class FileServer {
     private final String DENIED_RESPONSE = "DENIED";
     private String[] validResponseList = {SUCCESS_RESPONSE, FAILED_RESPONSE, DENIED_RESPONSE};
 
+    //// ----------------------------- Public Methods ------------------------------
+
     // TODO allow folder to be shared
     // TODO allow folder to be listed
     // TODO Add Set normal mode without SSL available
@@ -54,9 +56,13 @@ public class FileServer {
         this.keystorePath = keystorePath;
         this.hostedFolder = hostedFolder;
         this.portNum = port;
+    }
+
+    public void start() {
+        LOGGER.info("Server Started");
 
         // Check arguments
-        if (!acceptedArgs(port, hostedFolder, keystorePath, keystorePassword))
+        if (!acceptedArgs(portNum, hostedFolder, keystorePath, keystorePassword))
             return;
 
         // Check if file is present
@@ -68,24 +74,24 @@ public class FileServer {
         }
 
         try {
-            LOGGER.fine("Waiting on Clients");
+            LOGGER.info("Waiting on Clients");
 
             // Get ServerSocket
-            SSLServerSocket serverSocket = getServerSocket(port, keystorePath, keystorePassword);
+            SSLServerSocket serverSocket = getServerSocket(portNum, keystorePath, keystorePassword);
 
             // Create SSL Socket & Client communication
-            SSLSocket socket = (SSLSocket) serverSocket.accept(); //Connection Created
+            SSLSocket socket = (SSLSocket) serverSocket.accept();
             processSingleClient(socket);
         } catch (IOException ioe) {
             LOGGER.severe("Failed to accept connection.");
             LOGGER.log(Level.SEVERE, ioe.getMessage(), ioe);
             System.err.println("Failed to accept connection.");
-
         }
-
     }
 
-    protected boolean processSingleClient(SSLSocket socket){
+    //// ----------------------------- Core Logic ------------------------------
+
+    protected boolean processSingleClient(SSLSocket socket) {
         LOGGER.info("Connected to Client");
 
         // Setup Client Connection
@@ -96,7 +102,7 @@ public class FileServer {
                     new InputStreamReader(
                             socket.getInputStream()));
             clientConnectionOutput = new BufferedOutputStream(socket.getOutputStream());
-        }catch(IOException ioe){
+        } catch (IOException ioe) {
             LOGGER.severe("Failed to create Input Stream.");
             LOGGER.log(Level.SEVERE, ioe.getMessage(), ioe);
             System.err.println("Failed to create Input Stream for client.");
@@ -113,10 +119,10 @@ public class FileServer {
         processRequest(requestLineList, fileList, clientConnectionOutput);
 
         LOGGER.fine("Closing socket connections.");
-        try{
+        try {
             clientConnectionInput.close();
             socket.close();
-        }catch(IOException ioe){
+        } catch (IOException ioe) {
             LOGGER.severe("Failed to close client sockets.");
             LOGGER.log(Level.SEVERE, ioe.getMessage(), ioe);
             System.err.println("Failed to close client sockets.");
@@ -126,30 +132,11 @@ public class FileServer {
         return true;
     }
 
-    public void start(){
-        LOGGER.setLevel(Level.FINEST);
-        LOGGER.info("Started");
-    }
-    public List<String> collectRequest(BufferedReader clientConnectionInput){
-        List<String> requestLineList = null;
-        try {
-            String requestLine = clientConnectionInput.readLine();
-            LOGGER.info("Request received from Client: " + requestLine);
-            requestLineList = Arrays.asList(requestLine.split(" "));
-            if (checkRequestLineIsValid(requestLine)) {
-            }
-        }catch(IOException ioe){
-            LOGGER.severe("Failed to read request from client. The request may be invalid.");
-            LOGGER.log(Level.SEVERE, ioe.getMessage(), ioe);
-            System.err.println("Failed to read request from client. The request may be invalid.");
-        }
-        return requestLineList;
-    }
-    protected void processRequest(List<String> requestLineList, List<String> fileList, BufferedOutputStream clientConnectionOutput){
+    protected void processRequest(List<String> requestLineList, List<String> fileList, BufferedOutputStream clientConnectionOutput) {
 
         // Command Switch
         String command = requestLineList.get(0);
-        switch(command.toUpperCase()){
+        switch (command.toUpperCase()) {
             case GET_COMMAND:
                 processGetRequest(requestLineList, fileList, clientConnectionOutput);
                 break;
@@ -176,11 +163,11 @@ public class FileServer {
             fis.close();
             bos.close();
 
-        }catch (FileNotFoundException nfe){
+        } catch (FileNotFoundException nfe) {
             LOGGER.severe("Failed to find file. There has been an internal error looking for the requested file.");
             LOGGER.log(Level.SEVERE, nfe.getMessage(), nfe);
             System.err.println("Failed to find file. There has been an internal error looking for the requested file.");
-        }catch (IOException ioe){
+        } catch (IOException ioe) {
             // TODO Dump exception
             LOGGER.severe("Failed to close the input / output sockets to client.");
             LOGGER.log(Level.SEVERE, ioe.getMessage(), ioe);
@@ -189,7 +176,7 @@ public class FileServer {
     }
 
     //// ----------------------------- Process Requests ------------------------------
-    protected void processGetRequest(List<String> requestLine, List<String> fileList, BufferedOutputStream clientConnectionOutput){
+    protected void processGetRequest(List<String> requestLine, List<String> fileList, BufferedOutputStream clientConnectionOutput) {
         // Get File Name
         String requestedFilename = requestLine.get(1);
 
@@ -198,16 +185,16 @@ public class FileServer {
         if (!fileList.contains(requestedFilename)) {
             clientConnectionTextOutput.print(FAILED_RESPONSE + ": File Not Found");
             clientConnectionTextOutput.flush();
-        } else{
+        } else {
             // Send file
             // TODO perform OS filename join correctly
             clientConnectionTextOutput.println(SUCCESS_RESPONSE + " " + requestedFilename);
             clientConnectionTextOutput.flush();
-            sendFile( hostedFolder + "/" + requestedFilename, clientConnectionOutput);
+            sendFile(hostedFolder + "/" + requestedFilename, clientConnectionOutput);
         }
     }
 
-    protected void processListRequest(List<String> requestLine, List<String> fileList, BufferedOutputStream clientConnectionOutput){
+    protected void processListRequest(List<String> requestLine, List<String> fileList, BufferedOutputStream clientConnectionOutput) {
         PrintWriter clientConnectionTextOutput = new PrintWriter(clientConnectionOutput);
         clientConnectionTextOutput.println("SUCCESS LIST");
         LOGGER.info("Response: SUCCESS LIST");
@@ -216,7 +203,7 @@ public class FileServer {
         clientConnectionTextOutput.flush();
     }
 
-    protected void processInvalidRequest(List<String> requestLine, List<String> fileList, BufferedOutputStream clientConnectionOutput){
+    protected void processInvalidRequest(List<String> requestLine, List<String> fileList, BufferedOutputStream clientConnectionOutput) {
     }
 
     //// ----------------------------- Utilities ------------------------------
@@ -230,7 +217,23 @@ public class FileServer {
         return true;
     }
 
-    protected SSLServerSocket getServerSocket(int portNum, String keystorePath,  String password) {
+    public List<String> collectRequest(BufferedReader clientConnectionInput) {
+        List<String> requestLineList = null;
+        try {
+            String requestLine = clientConnectionInput.readLine();
+            LOGGER.info("Request received from Client: " + requestLine);
+            requestLineList = Arrays.asList(requestLine.split(" "));
+            if (checkRequestLineIsValid(requestLine)) {
+            }
+        } catch (IOException ioe) {
+            LOGGER.severe("Failed to read request from client. The request may be invalid.");
+            LOGGER.log(Level.SEVERE, ioe.getMessage(), ioe);
+            System.err.println("Failed to read request from client. The request may be invalid.");
+        }
+        return requestLineList;
+    }
+
+    protected SSLServerSocket getServerSocket(int portNum, String keystorePath, String password) {
         try {
             char[] passphrase = password.toCharArray();
 
@@ -257,7 +260,8 @@ public class FileServer {
             return null;
         }
     }
-    protected boolean checkRequestLineIsValid(String requestLine){
+
+    protected boolean checkRequestLineIsValid(String requestLine) {
         // TODO Check request is valid based on a list of accepted values
         return true;
     }

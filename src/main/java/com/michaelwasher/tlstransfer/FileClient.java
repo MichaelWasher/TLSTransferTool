@@ -66,14 +66,14 @@ public class FileClient {
         // Setup Client
         this.requestedFilename = requestedFilename;
         this.outputFilename = outputFilename;
-        if(! configureClient()){
+        if (!configureClient()) {
 //            return false;
         }
 
         // Process a Copy / Get file Request
         processGetRequest(printWriter);
         List<String> responseLineList = collectResponse(serverConnectionInput);
-        if(responseLineList == null){
+        if (responseLineList == null) {
             return false;
         }
 
@@ -83,7 +83,7 @@ public class FileClient {
 
     public boolean listFiles() {
         // Setup Client
-        if(! configureClient()){
+        if (!configureClient()) {
 //            return false;
         }
 
@@ -277,7 +277,7 @@ public class FileClient {
         return responseLineList;
     }
 
-    protected boolean setupSockets(){
+    protected boolean setupSockets() {
         try {
             clientSocket = this.getSSLSocket();
 
@@ -296,8 +296,8 @@ public class FileClient {
         }
         return true;
     }
-    protected X509Certificate getSessionCertificate()
-    {
+
+    protected X509Certificate getSessionCertificate() {
         X509Certificate sessionCertificate = null;
 
         try {
@@ -311,7 +311,8 @@ public class FileClient {
         }
         return sessionCertificate;
     }
-    protected boolean checkCertificateValidation(X509Certificate sessionCertificate){
+
+    protected boolean checkCertificateValidation(X509Certificate sessionCertificate) {
         String commonName = getCommonName(sessionCertificate);
         if (commonName != null && commonName.equalsIgnoreCase(this.hostname)) {
             LOGGER.info("Verified Host to be:" + this.hostname);
@@ -321,6 +322,7 @@ public class FileClient {
         }
         return true;
     }
+
     protected boolean configureClient() {
         // Check Args
         if (!acceptedArgs() || setupSockets()) {
@@ -329,7 +331,7 @@ public class FileClient {
 
         //Get Certificate for the session
         X509Certificate sessionCertificate = getSessionCertificate();
-        if(sessionCertificate == null || checkCertificateValidation(sessionCertificate) == false){
+        if (sessionCertificate == null || checkCertificateValidation(sessionCertificate) == false) {
             return false;
         }
         return true;
