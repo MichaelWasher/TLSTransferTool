@@ -4,31 +4,18 @@ services:
     image: tftp
     hostname: tftp-client
     domainname: tftp-client.example.com
-    command: ["client", "tftp-server.example.com", "33333", "-o output_file.md", "README.md"]
+    command: ["client", "copy", "tftp-server.example.com", "33333", "-o output_file.md", "README.md"]
     depends_on:
       - tftp-server.example.com
     environment:
-      JAVA_OPTS: -Djava.util.logging.level=FINEST  -Djavax.net.ssl.trustStore=/tmp/src/certificates/KeyStore.jks -Djavax.net.ssl.trustStorePassword=tester1234
-      CLIENT_DEBUG: ${CLIENT_DEBUG}
-      CLIENT_HOST: ${SERVER_HOST}
-      CLIENT_PORT: ${SERVER_PORT}
-    volumes:
-    - ./certificates/tftp-server.example.com:/tmp/src/certificates
-    - ./target:/tmp/src/target
+      JAVA_OPTS: -Djava.util.logging.level=FINEST  -Djavax.net.ssl.trustStore=certificates/tftp-server.example.com/KeyStore.jks -Djavax.net.ssl.trustStorePassword=tester1234
   "tftp-server.example.com":
     image: tftp
-    command: ["server", "--key-store=/tmp/src/certificates/KeyStore.jks", "--key-store-password=tester1234", "33333", "/tmp/src"]
+    command: ["server", "--key-store=certificates/tftp-server.example.com/KeyStore.jks", "--key-store-password=tester1234", "33333", "/tmp/src"]
     hostname: tftp-server
     domainname: tftp-server.example.com
     environment:
-      JAVA_OPTS: -Djava.util.logging.ConsoleHandler.level=FINEST  -Djavax.net.ssl.trustStore=/tmp/src/certificates/KeyStore.jks -Djavax.net.ssl.trustStorePassword=tester1234
+      JAVA_OPTS: -Djava.util.logging.ConsoleHandler.level=FINEST  -Djavax.net.ssl.trustStore=certificates/tftp-server.example.com/KeyStore.jks -Djavax.net.ssl.trustStorePassword=tester1234
 #      JAVA_OPTS: -Djavax.net.debug=all
-      SERVER_DEBUG: ${SERVER_DEBUG}
-      KEYSTORE: ${KEYSTORE}
-      KEYSTORE_PASS: ${KEYSTORE_PASS}
-      SERVER_PORT: ${SERVER_PORT}
     ports:
-      - "44444"
-    volumes:
-      - ./certificates/tftp-server.example.com:/tmp/src/certificates
-      - ./target:/tmp/src/target 
+      - "33333"

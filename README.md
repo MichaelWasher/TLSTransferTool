@@ -1,35 +1,31 @@
 # Trivial File Transfer Protocol (TFTP)
+This project is a small file-server and client written in Java.
+
+The Server uses TLS to communicate with Client, which verifies the Servers certificates at the beginning of the sessions.
+
+(Note: the server key has been signed by an untrusted CA which is present in `./certificates` and is added to Docker builds)
 
 ## Building
-### Build with Docker
-docker build -t tftp .
-#### For faster subsequent build times, store the maven artifacts
-docker build -v -t tftp .
-### Build using Maven 
-mvn package
+#### Build with Docker
+`$ docker build -t tftp .`
 
-### Build using S2i
-s2i build git@github.com:MichaelWasher/TrivialFTP.git appuio/s2i-maven-java tftp
+#### Build using Maven 
+`$ mvn package`
 
-## Usage 
-### Run with Docker
+## Using the TFTP
+To run the TFTP Server outside of the Docker containers, Java must be configured to use the appropriate keystore as the server certificates are self-signed.
+If you choose to use your own certificate that is signed by a public trusted CA then this will not be required.
+~~~
+JAVA_OPTS="-Djavax.net.ssl.trustStore=certificates/localhost/KeyStore.jks -Djavax.net.ssl.trustStorePassword=tester1234"
+alias tftp="java $JAVA_OPTS -jar target/tftp.jar"
+~~~
 #### Run the server
-`$ docker run tftp server `
+`$ tftp server --key-store=certificates/localhost/KeyStore.jks --key-store-password=tester1234 33333 /shared`
 #### Run the client
-`$ docker run tftp client` 
+`$ tftp client list localhost 33333`
+`$ tftp client copy localhost 33333 <filename> -o <output-file>` 
 
+## Run Tests
+To run the tests pytest is required.
 
-Setting up SSL in Java
------------
-~~~
-openssl genrsa -out tftp-server.example.com.key 2048
-openssl req -new -key tftp-server.example.com.key -out tftp-server.example.com.csr
-openssl x509 -req -in tftp-server.example.com.csr -CA rootCA.crt -CAkey rootCA.key -CAcreateserial -out tftp-server.example.com.crt -days 500 -sha256
-~~~
-By default there are a couple of certificates provided for `localhost` and `tftp_server.example.com`.
-
-### Debugging
-To configure Debug network logs, the below values can be set for the JAVA_OPTS environment variable.
-"-Djavax.net.debug=all"
-
-
+`cd test && pytest`
